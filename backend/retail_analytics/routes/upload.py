@@ -3,7 +3,7 @@ import uuid
 from flask import Blueprint, request, jsonify
 from ..config import Config
 from ..metadata import extract_and_log
-from ..cv.processor import process_frame
+from ..cv.processor import process_frame, subtract_background
 
 upload_bp = Blueprint("upload", __name__)
 
@@ -42,3 +42,26 @@ def upload_image():
         "metadata"      : metadata,
         "processed_path": processed_path
     }), 201
+
+
+@upload_bp.route("/compare", methods=["POST"])
+def compare_frames():
+    if "frame1" not in request.files or "frame2" not in request.files:
+        return jsonify({"error": "Please upload both frame1 and frame2"}), 400
+
+    def save_file(file):
+        ext = file.filename.rsplit(".", 1)[1].lower()
+        unique_name = f"{uuid.uuid4().hex}.{ext}"
+        save_path = os.path.join(Config.UPLOAD_FOLDER, unique_name)
+        file.save(save_path)
+        return save_path
+
+    path1 = save_file(request.files["frame1"])
+    path2 = save_file(request.files["frame2"])
+
+    diff_path = subtract_background(path1, path2)
+
+    return jsonify({
+        "message"  : "Background subtraction complete",
+        "diff_path": diff_path
+    }), 200
