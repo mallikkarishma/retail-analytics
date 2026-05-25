@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from .config import Config
 from .routes.upload import upload_bp
 from .routes.video import video_bp
@@ -9,8 +10,8 @@ def create_app():
     app.config.from_object(Config)
 
     Config.ensure_dirs()
+    CORS(app)
 
-    # Initialize database on startup
     init_db()
 
     app.register_blueprint(upload_bp, url_prefix="/api")

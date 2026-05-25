@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Retail Analytics Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+        }
+        .card {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+            border-left: 5px solid #00d4ff;
+        }
+        .suspicious {
+            border-left: 5px solid red;
+        }
+        .safe {
+            border-left: 5px solid green;
+        }
+        .label {
+            font-size: 12px;
+            color: #aaa;
+        }
+        .value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        button {
+            background: #00d4ff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏪 Retail Aisle Monitor</h1>
+    <button onclick="loadData()">Refresh Data</button>
+    <div id="records"></div>
+
+    <script>
+        function loadData() {
+            fetch("http://127.0.0.1:5000/api/records")
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById("records");
+                    container.innerHTML = "";
+
+                    if (data.length === 0) {
+                        container.innerHTML = "<p>No records found.</p>";
+                        return;
+                    }
+
+                    data.forEach(record => {
+                        const isSuspicious = record.is_suspicious === 1;
+                        const card = document.createElement("div");
+                        card.className = "card " + (isSuspicious ? "suspicious" : "safe");
+                        card.innerHTML = `
+                            <div class="label">Aisle ID</div>
+                            <div class="value">${record.aisle_id}</div>
+                            <br>
+                            <div class="label">Max Dwell Time</div>
+                            <div class="value">${record.dwell_time_sec} sec</div>
+                            <br>
+                            <div class="label">Suspicious Frames</div>
+                            <div class="value">${record.suspicious_frames} / ${record.total_frames}</div>
+                            <br>
+                            <div class="label">Status</div>
+                            <div class="value">${isSuspicious ? "🚨 SUSPICIOUS" : "✅ SAFE"}</div>
+                            <br>
+                            <div class="label">Recorded At</div>
+                            <div class="value" style="font-size:14px">${record.recorded_at}</div>
+                        `;
+                        container.appendChild(card);
+                    });
+                })
+                .catch(err => {
+                    document.getElementById("records").innerHTML = 
+                        "<p>Error fetching data. Is the server running?</p>";
+                });
+        }
+
+        // Auto load on page open
+        loadData();
+
+        // Auto refresh every 10 seconds
+        setInterval(loadData, 10000);
+    </script>
+</body>
+</html>
