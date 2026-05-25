@@ -7,6 +7,7 @@ class Config:
     LOG_DIR       = os.path.join(BASE_DIR, "logs")
     REPORTS_DIR   = os.path.join(BASE_DIR, "reports")
     MODELS_DIR    = os.path.join(BASE_DIR, "models")
+    DB_PATH = os.path.join(BASE_DIR, "retail_analytics.db")
     CANVAS_WIDTH  = 640
     CANVAS_HEIGHT = 480
 
