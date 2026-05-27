@@ -14,27 +14,23 @@
             text-align: center;
             color: #00d4ff;
         }
-        .card {
-            background: #16213e;
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .tile {
             border-radius: 10px;
-            padding: 20px;
-            margin: 10px 0;
-            border-left: 5px solid #00d4ff;
-        }
-        .suspicious {
-            border-left: 5px solid red;
-        }
-        .safe {
-            border-left: 5px solid green;
-        }
-        .label {
-            font-size: 12px;
-            color: #aaa;
-        }
-        .value {
-            font-size: 20px;
+            padding: 25px;
+            text-align: center;
+            font-size: 18px;
             font-weight: bold;
         }
+        .GREEN  { background: #1a5e1a; border: 3px solid #00ff00; }
+        .YELLOW { background: #5e5e1a; border: 3px solid #ffff00; }
+        .RED    { background: #5e1a1a; border: 3px solid #ff0000; }
+        .label  { font-size: 13px; color: #ccc; margin-top: 8px; }
         button {
             background: #00d4ff;
             border: none;
@@ -45,59 +41,62 @@
             display: block;
             margin: 20px auto;
         }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 10px 0;
+        }
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .dot { width: 15px; height: 15px; border-radius: 50%; }
+        .dot-green  { background: #00ff00; }
+        .dot-yellow { background: #ffff00; }
+        .dot-red    { background: #ff0000; }
     </style>
 </head>
 <body>
     <h1>🏪 Retail Aisle Monitor</h1>
+
+    <div class="legend">
+        <div class="legend-item"><div class="dot dot-green"></div> Safe</div>
+        <div class="legend-item"><div class="dot dot-yellow"></div> Warning</div>
+        <div class="legend-item"><div class="dot dot-red"></div> Suspicious</div>
+    </div>
+
     <button onclick="loadData()">Refresh Data</button>
-    <div id="records"></div>
+
+    <div class="grid" id="tiles"></div>
 
     <script>
         function loadData() {
-            fetch("http://127.0.0.1:5000/api/records")
+            fetch("http://127.0.0.1:5000/api/congestion")
                 .then(res => res.json())
                 .then(data => {
-                    const container = document.getElementById("records");
+                    const container = document.getElementById("tiles");
                     container.innerHTML = "";
 
                     if (data.length === 0) {
-                        container.innerHTML = "<p>No records found.</p>";
+                        container.innerHTML = "<p>No data found.</p>";
                         return;
                     }
 
                     data.forEach(record => {
-                        const isSuspicious = record.is_suspicious === 1;
-                        const card = document.createElement("div");
-                        card.className = "card " + (isSuspicious ? "suspicious" : "safe");
-                        card.innerHTML = `
-                            <div class="label">Aisle ID</div>
-                            <div class="value">${record.aisle_id}</div>
-                            <br>
-                            <div class="label">Max Dwell Time</div>
-                            <div class="value">${record.dwell_time_sec} sec</div>
-                            <br>
-                            <div class="label">Suspicious Frames</div>
-                            <div class="value">${record.suspicious_frames} / ${record.total_frames}</div>
-                            <br>
-                            <div class="label">Status</div>
-                            <div class="value">${isSuspicious ? "🚨 SUSPICIOUS" : "✅ SAFE"}</div>
-                            <br>
-                            <div class="label">Recorded At</div>
-                            <div class="value" style="font-size:14px">${record.recorded_at}</div>
+                        const tile = document.createElement("div");
+                        tile.className = "tile " + record.congestion_level;
+                        tile.innerHTML = `
+                            ${record.congestion_level === "RED" ? "🚨" : 
+                              record.congestion_level === "YELLOW" ? "⚠️" : "✅"}
+                            <div>${record.aisle_id.toUpperCase()}</div>
+                            <div class="label">Dwell: ${record.dwell_time_sec} sec</div>
+                            <div class="label">Suspicious Frames: ${record.suspicious_frames}</div>
+                            <div class="label">${record.congestion_level}</div>
                         `;
-                        container.appendChild(card);
+                        container.appendChild(tile);
                     });
-                })
-                .catch(err => {
-                    document.getElementById("records").innerHTML = 
-                        "<p>Error fetching data. Is the server running?</p>";
                 });
         }
 
-        // Auto load on page open
         loadData();
-
-        // Auto refresh every 10 seconds
         setInterval(loadData, 10000);
     </script>
 </body>
