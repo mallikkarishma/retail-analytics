@@ -3,6 +3,7 @@ from flask_cors import CORS
 from .config import Config
 from .routes.upload import upload_bp
 from .routes.video import video_bp
+from .routes.congestion import congestion_bp
 from .database import init_db
 
 def create_app():
@@ -16,5 +17,6 @@ def create_app():
 
     app.register_blueprint(upload_bp, url_prefix="/api")
     app.register_blueprint(video_bp, url_prefix="/api")
+    app.register_blueprint(congestion_bp, url_prefix="/api")
 
     return app
