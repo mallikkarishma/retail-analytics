@@ -1,4 +1,4 @@
-from .database import get_all_records
+from .database import get_all_records, get_records_by_session
 
 def get_congestion_level(dwell_time_sec, is_suspicious):
     if is_suspicious and dwell_time_sec >= 15:
@@ -8,8 +8,11 @@ def get_congestion_level(dwell_time_sec, is_suspicious):
     else:
         return "GREEN"
 
-def get_top_congested_aisles():
-    records = get_all_records()
+def get_top_congested_aisles(session_id=None):
+    if session_id:
+        records = get_records_by_session(session_id)
+    else:
+        records = get_all_records()
 
     # Get latest record per aisle
     latest = {}
@@ -18,7 +21,6 @@ def get_top_congested_aisles():
         if aisle_id not in latest:
             latest[aisle_id] = record
 
-    # Calculate congestion for each aisle
     congestion_data = []
     for aisle_id, record in latest.items():
         level = get_congestion_level(
@@ -26,15 +28,12 @@ def get_top_congested_aisles():
             record["is_suspicious"]
         )
         congestion_data.append({
-            "aisle_id"        : aisle_id,
-            "dwell_time_sec"  : record["dwell_time_sec"],
+            "aisle_id"         : aisle_id,
+            "dwell_time_sec"   : record["dwell_time_sec"],
             "suspicious_frames": record["suspicious_frames"],
-            "is_suspicious"   : record["is_suspicious"],
-            "congestion_level": level
+            "is_suspicious"    : record["is_suspicious"],
+            "congestion_level" : level
         })
 
-    # Sort by dwell time descending
     congestion_data.sort(key=lambda x: x["dwell_time_sec"], reverse=True)
-
-    # Return top 3
     return congestion_data[:3]

@@ -1,22 +1,22 @@
 import cv2
 import json
 import os
+import time
 from datetime import datetime
 from ..config import Config
 
 # Threshold settings
-PIXEL_CHANGE_THRESHOLD = 15000  # minimum pixels changed to count as movement
-SUSPICIOUS_TIME_LIMIT  = 10     # seconds before flagging as suspicious
+PIXEL_CHANGE_THRESHOLD = 15000
+SUSPICIOUS_TIME_LIMIT  = 10
 
-def detect_motion(video1_path: str, video2_path: str):
-    cap1 = cv2.VideoCapture(video1_path)  # background/empty
-    cap2 = cv2.VideoCapture(video2_path)  # with shoppers
+def detect_motion_stream(video1_path: str, video2_path: str):
+    cap1 = cv2.VideoCapture(video1_path)
+    cap2 = cv2.VideoCapture(video2_path)
 
     fps = cap2.get(cv2.CAP_PROP_FPS)
     if fps == 0:
         fps = 25
 
-    results = []
     frame_count = 0
     suspicious_frames = 0
 
@@ -31,11 +31,9 @@ def detect_motion(video1_path: str, video2_path: str):
         gray2 = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
 
         diff = cv2.absdiff(gray1, gray2)
-
         _, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
 
         changed_pixels = cv2.countNonZero(thresh)
-
         current_time = round(frame_count / fps, 2)
 
         if changed_pixels > PIXEL_CHANGE_THRESHOLD:
@@ -46,23 +44,28 @@ def detect_motion(video1_path: str, video2_path: str):
         dwell_time = round(suspicious_frames / fps, 2)
         is_suspicious = dwell_time >= SUSPICIOUS_TIME_LIMIT
 
-        results.append({
-            "frame"          : frame_count,
-            "time_sec"       : current_time,
-            "changed_pixels" : changed_pixels,
-            "dwell_time_sec" : dwell_time,
-            "suspicious"     : is_suspicious
-        })
-
+        # Only yield every 10th frame
+        if frame_count % 10 == 0:
+            yield {
+                "frame"          : frame_count,
+                "time_sec"       : current_time,
+                "changed_pixels" : changed_pixels,
+                "dwell_time_sec" : dwell_time,
+                "suspicious"     : is_suspicious
+            }
+            
         frame_count += 1
 
     cap1.release()
     cap2.release()
 
-    # Save results to log
+
+def detect_motion(video1_path: str, video2_path: str):
+    results = list(detect_motion_stream(video1_path, video2_path))
+
     log_entry = {
         "timestamp"        : datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "total_frames"     : frame_count,
+        "total_frames"     : len(results),
         "suspicious_frames": len([r for r in results if r["suspicious"]]),
         "is_suspicious"    : any(r["suspicious"] for r in results),
         "results"          : results

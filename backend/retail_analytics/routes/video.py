@@ -1,9 +1,9 @@
 import os
 import uuid
-from flask import Blueprint, request, jsonify
+import json
+from flask import Blueprint, request, jsonify, Response, stream_with_context
 from ..config import Config
-from ..cv.motion import detect_motion
-from ..database import insert_dwell_record, get_all_records
+from ..cv.motion import detect_motion_stream
 
 video_bp = Blueprint("video", __name__)
 
@@ -21,34 +21,48 @@ def analyze_video():
     path1, name1 = save_video(request.files["video1"])
     path2, name2 = save_video(request.files["video2"])
 
-    aisle_id = request.form.get("aisle_id", "aisle_1")
+    aisle_id   = request.form.get("aisle_id", "aisle_1")
+    session_id = request.form.get("session_id", str(uuid.uuid4()))
 
-    results = detect_motion(path1, path2)
+    def generate():
+        from ..database import insert_dwell_record
+        total_suspicious = 0
+        max_dwell = 0
+        total_frames = 0
 
-    suspicious = [r for r in results if r["suspicious"]]
-    max_dwell = max([r["dwell_time_sec"] for r in results], default=0)
+        for result in detect_motion_stream(path1, path2):
+            total_frames += 1
+            if result["suspicious"]:
+                total_suspicious += 1
+            if result["dwell_time_sec"] > max_dwell:
+                max_dwell = result["dwell_time_sec"]
 
-    # Save to database
-    insert_dwell_record(
-        aisle_id       = aisle_id,
-        video_file     = name2,
-        total_frames   = len(results),
-        suspicious_frames = len(suspicious),
-        is_suspicious  = len(suspicious) > 0,
-        dwell_time_sec = max_dwell
-    )
+            yield f"data: {json.dumps(result)}\n\n"
 
-    return jsonify({
-        "total_frames"     : len(results),
-        "suspicious_frames": len(suspicious),
-        "is_suspicious"    : len(suspicious) > 0,
-        "max_dwell_sec"    : max_dwell,
-        "aisle_id"         : aisle_id,
-        "details"          : results[:20]
-    }), 200
+        insert_dwell_record(
+            session_id        = session_id,
+            aisle_id          = aisle_id,
+            video_file        = name2,
+            total_frames      = total_frames,
+            suspicious_frames = total_suspicious,
+            is_suspicious     = total_suspicious > 0,
+            dwell_time_sec    = max_dwell
+        )
+
+        yield f"data: {json.dumps({'done': True, 'session_id': session_id, 'aisle_id': aisle_id})}\n\n"
+
+    return Response(stream_with_context(generate()), mimetype="text/event-stream")
 
 
 @video_bp.route("/records", methods=["GET"])
 def get_records():
+    from ..database import get_all_records
     records = get_all_records()
+    return jsonify(records), 200
+
+
+@video_bp.route("/records/<session_id>", methods=["GET"])
+def get_session_records(session_id):
+    from ..database import get_records_by_session
+    records = get_records_by_session(session_id)
     return jsonify(records), 200
