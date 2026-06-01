@@ -2,10 +2,10 @@ import cv2
 import json
 import os
 import time
+import base64
 from datetime import datetime
 from ..config import Config
 
-# Threshold settings
 PIXEL_CHANGE_THRESHOLD = 15000
 SUSPICIOUS_TIME_LIMIT  = 10
 
@@ -44,16 +44,22 @@ def detect_motion_stream(video1_path: str, video2_path: str):
         dwell_time = round(suspicious_frames / fps, 2)
         is_suspicious = dwell_time >= SUSPICIOUS_TIME_LIMIT
 
-        # Only yield every 10th frame
         if frame_count % 10 == 0:
+            display = cv2.resize(frame2, (320, 240))
+            _, buffer = cv2.imencode('.jpg', display, [cv2.IMWRITE_JPEG_QUALITY, 60])
+            frame_b64 = base64.b64encode(buffer).decode('utf-8')
+
             yield {
                 "frame"          : frame_count,
                 "time_sec"       : current_time,
                 "changed_pixels" : changed_pixels,
                 "dwell_time_sec" : dwell_time,
-                "suspicious"     : is_suspicious
+                "suspicious"     : is_suspicious,
+                "image"          : frame_b64
             }
-            
+            # Sleep to match real video speed
+            time.sleep(10 / fps)
+
         frame_count += 1
 
     cap1.release()

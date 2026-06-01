@@ -20,8 +20,8 @@
         .upload-row { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
         .input-group { display: flex; flex-direction: column; gap: 6px; }
         .input-group label { color: #c8d6e5; font-size: 10px; letter-spacing: 0.08em; text-shadow: 0 0 6px rgba(200,214,229,0.6), 0 0 12px rgba(200,214,229,0.25); }
-        .input-group input[type="file"] { background: #020c14; border: 1px solid #0d3d4f; color: #e0f2fe; padding: 6px; font-size: 11px; border-radius: 2px; font-family: 'Share Tech Mono', monospace; width: 100%; }
-        .input-group input[type="text"] { background: #020c14; border: 1px solid #0d3d4f; color: #e0f2fe; padding: 7px; font-size: 11px; border-radius: 2px; font-family: 'Share Tech Mono', monospace; width: 100%; }
+        .input-group input[type="file"] { background: #020c14; border: 1px solid #0d3d4f; color: #e0f2fe; padding: 6px; font-size: 11px; border-radius: 2px; font-family: 'Space Mono', monospace; width: 100%; }
+        .input-group input[type="text"] { background: #020c14; border: 1px solid #0d3d4f; color: #e0f2fe; padding: 7px; font-size: 11px; border-radius: 2px; font-family: 'Space Mono', monospace; width: 100%; }
         .analyze-btn { background: #0a0f14; border: 1px solid #c8d6e5; color: #c8d6e5; padding: 8px 16px; font-family: 'Space Mono', monospace; font-size: 11px; cursor: pointer; border-radius: 2px; letter-spacing: 0.08em; white-space: nowrap; }
         .analyze-btn:hover { background: #c8d6e520; }
         .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -58,11 +58,10 @@
         .dot { width: 7px; height: 7px; border-radius: 50%; }
         .refresh-btn { font-size: 12px; padding: 6px 14px; border-radius: 2px; border: 1px solid #c8d6e540; background: #041520; color: #c8d6e5; cursor: pointer; letter-spacing: 0.08em; font-family: 'Space Mono', monospace; }
         .refresh-btn:hover { border-color: #c8d6e5; }
-        .timestamp { font-size: 11px; color: #0d3d4f; font-family: 'Share Tech Mono', monospace; }
+        .timestamp { font-size: 11px; color: #0d3d4f; font-family: 'Space Mono', monospace; }
         .empty { color: #0d3d4f; font-size: 13px; text-align: center; padding: 2rem; }
         .alert { background: #ef444415; border: 1px solid #ef444440; color: #fca5a5; padding: 8px 14px; border-radius: 2px; font-size: 12px; margin-top: 8px; display: none; }
         .video-label { color: #0d3d4f; font-size: 10px; margin-bottom: 4px; }
-        video { width: 100%; border-radius: 4px; max-height: 180px; background: #000; }
     </style>
 </head>
 <body>
@@ -117,15 +116,11 @@
         </div>
 
         <div id="video-preview" style="display:none; margin-top:14px;">
-            <div style="color:#0284c7; font-size:10px; letter-spacing:0.08em; margin-bottom:8px;">// LIVE FEED PREVIEW</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div style="color:#c8d6e5; font-size:10px; letter-spacing:0.08em; margin-bottom:8px;">// LIVE FRAME PREVIEW</div>
+            <div style="display:flex; justify-content:center;">
                 <div>
-                    <div class="video-label">// background</div>
-                    <video id="vid1" style="border:1px solid #0d3d4f;" controls muted></video>
-                </div>
-                <div>
-                    <div class="video-label">// live feed</div>
-                    <video id="vid2" style="border:1px solid #38bdf840;" controls muted></video>
+                    <div class="video-label">// current frame</div>
+                    <img id="frame-img" style="width:320px; height:240px; border:1px solid #38bdf840; border-radius:4px; background:#000;" />
                 </div>
             </div>
         </div>
@@ -191,12 +186,7 @@
             formData.append("aisle_id", aisleId);
             formData.append("session_id", SESSION_ID);
 
-            document.getElementById("vid1").src = URL.createObjectURL(video1);
-            document.getElementById("vid2").src = URL.createObjectURL(video2);
             document.getElementById("video-preview").style.display = "block";
-            document.getElementById("vid1").play();
-            document.getElementById("vid2").play();
-
             document.getElementById("analyze-btn").disabled = true;
             document.getElementById("progress-wrap").style.display = "block";
             document.getElementById("live-stats").style.display = "grid";
@@ -242,8 +232,11 @@
                                 document.getElementById("live-dwell").textContent = data.dwell_time_sec + "s";
                                 document.getElementById("progress-label").textContent = `// processing frame ${data.frame} — time: ${data.time_sec}s`;
 
-                                const vid2 = document.getElementById("vid2");
-                                const progress = Math.min((vid2.currentTime / vid2.duration) * 100, 95);
+                                if (data.image) {
+                                    document.getElementById("frame-img").src = "data:image/jpeg;base64," + data.image;
+                                }
+
+                                const progress = Math.min((data.time_sec / 35) * 100, 95);
                                 document.getElementById("progress-fill").style.width = progress + "%";
 
                                 if (data.suspicious) {
