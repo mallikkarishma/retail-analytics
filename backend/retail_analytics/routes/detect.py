@@ -3,6 +3,7 @@ import uuid
 from flask import Blueprint, request, jsonify
 from ..config import Config
 from ..ml.yolo_detector import detect_objects, detect_from_video
+from ..ml.inference_worker import submit_job, get_result
 
 detect_bp = Blueprint("detect", __name__)
 
@@ -17,14 +18,20 @@ def detect():
     save_path = os.path.join(Config.UPLOAD_FOLDER, unique_name)
     file.save(save_path)
 
-    results = detect_objects(save_path)
+    job_id = str(uuid.uuid4())
+    submit_job(job_id, save_path, job_type="image")
 
     return jsonify({
-        "filename"  : unique_name,
-        "persons"   : results["persons"],
-        "carts"     : results["carts"],
-        "detections": results["detections"]
-    }), 200
+        "job_id"  : job_id,
+        "filename": unique_name,
+        "status"  : "processing"
+    }), 202
+
+
+@detect_bp.route("/detect/result/<job_id>", methods=["GET"])
+def detect_result(job_id):
+    result = get_result(job_id)
+    return jsonify(result), 200
 
 
 @detect_bp.route("/detect-video", methods=["POST"])
@@ -37,12 +44,11 @@ def detect_video():
     save_path = os.path.join(Config.UPLOAD_FOLDER, unique_name)
     file.save(save_path)
 
-    results = detect_from_video(save_path)
+    job_id = str(uuid.uuid4())
+    submit_job(job_id, save_path, job_type="video")
 
     return jsonify({
-        "filename"       : unique_name,
-        "total_persons"  : results["total_persons"],
-        "total_carts"    : results["total_carts"],
-        "frames_analyzed": results["frames_analyzed"],
-        "frame_results"  : results["frame_results"]
-    }), 200
+        "job_id"  : job_id,
+        "filename": unique_name,
+        "status"  : "processing"
+    }), 202
