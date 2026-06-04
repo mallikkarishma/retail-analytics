@@ -5,6 +5,7 @@ from .routes.upload import upload_bp
 from .routes.video import video_bp
 from .routes.congestion import congestion_bp
 from .routes.detect import detect_bp
+from .routes.analytics import analytics_bp
 from .database import init_db
 from .ml.inference_worker import start_worker
 
@@ -17,12 +18,12 @@ def create_app():
 
     init_db()
 
-    # Start YOLO inference worker in background thread
     start_worker()
 
-    app.register_blueprint(upload_bp,  url_prefix="/api")
-    app.register_blueprint(video_bp,   url_prefix="/api")
+    app.register_blueprint(upload_bp,     url_prefix="/api")
+    app.register_blueprint(video_bp,      url_prefix="/api")
     app.register_blueprint(congestion_bp, url_prefix="/api")
-    app.register_blueprint(detect_bp,  url_prefix="/api")
+    app.register_blueprint(detect_bp,     url_prefix="/api")
+    app.register_blueprint(analytics_bp,  url_prefix="/api")
 
     return app
