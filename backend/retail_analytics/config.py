@@ -8,7 +8,7 @@ class Config:
     REPORTS_DIR   = os.path.join(BASE_DIR, "reports")
     MODELS_DIR    = os.path.join(BASE_DIR, "models")
     DB_PATH = os.path.join(BASE_DIR, "retail_analytics.db")
-    GROQ_API_KEY = os.getenv("GROQ_API_KEY", "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")
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
     CANVAS_WIDTH  = 640
     CANVAS_HEIGHT = 480
 

@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from backend.retail_analytics import create_app
 
 app = create_app()

@@ -7,3 +7,4 @@ uploads/
 logs/
 models/
 reports/
+.env
