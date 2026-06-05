@@ -1,6 +1,7 @@
 import sqlite3
 import os
 from .config import Config
+from .audit import write_audit_report
 
 def get_connection():
     conn = sqlite3.connect(Config.DB_PATH)
@@ -42,6 +43,9 @@ def insert_dwell_record(session_id, aisle_id, video_file, total_frames,
 
     conn.commit()
     conn.close()
+
+    # 🔍 Audit check — fires after every insert
+    write_audit_report(aisle_id, dwell_time_sec, suspicious_frames, total_frames)
 
 def get_records_by_session(session_id):
     conn = get_connection()

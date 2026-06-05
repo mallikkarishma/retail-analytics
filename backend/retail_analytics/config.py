@@ -17,6 +17,8 @@ class Config:
     DEBUG      = os.getenv("FLASK_DEBUG", "false").lower() == "true"
     SECRET_KEY = os.getenv("SECRET_KEY", "retail-dev-secret")
 
+    AISLE_MAX_CAPACITY = 15.0  # seconds — audit triggers above this
+
     @classmethod
     def ensure_dirs(cls):
         for d in [cls.UPLOAD_FOLDER, cls.LOG_DIR, cls.REPORTS_DIR, cls.MODELS_DIR]:
