@@ -22,7 +22,7 @@ def init_db():
             suspicious_frames INTEGER NOT NULL,
             is_suspicious     INTEGER NOT NULL,
             dwell_time_sec    REAL    NOT NULL,
-            recorded_at       TEXT    DEFAULT (datetime('now'))
+            recorded_at       TEXT    DEFAULT (datetime('now', 'localtime'))
         )
     ''')
 

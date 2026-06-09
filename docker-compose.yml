@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  retail-analytics:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/retail_analytics/uploads:/app/backend/retail_analytics/uploads
+      - ./backend/retail_analytics/logs:/app/backend/retail_analytics/logs
+      - ./backend/retail_analytics/reports:/app/backend/retail_analytics/reports
+      - ./backend/retail_analytics/models:/app/backend/retail_analytics/models
+    env_file:
+      - .env
+    restart: unless-stopped

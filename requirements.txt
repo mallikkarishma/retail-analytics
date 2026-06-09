@@ -4,3 +4,4 @@ numpy
 pandas
 ultralytics
 python-dotenv
+flask-cors
